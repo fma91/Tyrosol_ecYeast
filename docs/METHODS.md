@@ -87,3 +87,17 @@ run_tyrosol_ecFactory
 - Gurobi (LP solver for RAVEN)
 
 Set `ECYEASTGEM_BATCH` if the base model is not at the default path above.
+
+## ByTyrOH cumulative strains (production envelopes)
+
+Lab strains (ByTyrOH 1–12, def) apply Iván ecFactory targets cumulatively.
+`scripts/plot_ByTyrOH_envelopes.m` uses **`ecTyrosol.mat`** (native Ehrlich pathway,
+ARO10/ADH7 kcat = 1000) — the same model that matches Iván’s target list in
+`run_tyrosol_ecFactory.m` — with `new_tyrosol_ex`, `getYieldPlot`, and cumulative
+`getMutantModel` edits per ByTyrOH strain. Default medium: **Min** (override in
+the function call if needed). Gene mapping: `data/ByTyrOH_strain_table.md`.
+
+```matlab
+addpath('scripts')
+plot_ByTyrOH_envelopes
+```

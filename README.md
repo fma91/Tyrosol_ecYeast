@@ -13,7 +13,10 @@ Tyrosol_ecYeast/
 │   ├── build_ecTyrosol_model_raven.m   build ecTyrosol.mat (RAVEN)
 │   └── ecTyrosol.mat                   enzyme-constrained tyrosol model
 ├── scripts/
-│   └── run_tyrosol_ecFactory.m         ecFactory strain design
+│   ├── run_tyrosol_ecFactory.m         ecFactory strain design
+│   └── plot_ByTyrOH_envelopes.m        cumulative ByTyrOH yield envelopes
+├── data/
+│   └── ByTyrOH_strain_table.md         lab strain ↔ model gene mapping
 ├── results/                            target lists (L1, L2, L3, transporters)
 └── docs/
     └── METHODS.md                      assumptions and parameters
@@ -37,6 +40,15 @@ run_tyrosol_ecFactory                % results/*.txt
 
 2. **Strain design** — `run_tyrosol_ecFactory.m` runs ecFactory on minimal
    glucose medium and writes ranked targets to `results/`.
+
+3. **ByTyrOH envelopes** — `plot_ByTyrOH_envelopes.m` uses **`ecTyrosol.mat`**
+   (native Ehrlich, Iván-matching predictions) and plots one biomass–tyrosol
+   envelope per cumulative lab mutant (all curves in one figure).
+
+```matlab
+addpath('scripts')
+plot_ByTyrOH_envelopes
+```
 
 ## Model assumptions
 
