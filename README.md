@@ -2,44 +2,47 @@
 
 Genome-scale **strain design for tyrosol production** in *Saccharomyces
 cerevisiae* using an enzyme-constrained model (`ecTyrosol.mat`) and the
-[ecFactory](https://github.com/SysBioChalmers/ecFactory) pipeline.
-
-Repository layout for model building, simulation, and target prediction
-outputs (L1, L2, L3, transporters).
+[ecFactory](https://github.com/SysBioChalmers/ecFactory) pipeline (GECKO 2.0.3
++ RAVEN).
 
 ## Contents
 
 ```
 Tyrosol_ecYeast/
-├── README.md
 ├── model/
-│   ├── ecTyrosol.mat              enzyme-constrained tyrosol production model
-│   └── build_ecTyrosol_model.py   builds ecTyrosol.mat from ecYeastGEM_batch
+│   ├── build_ecTyrosol_model_raven.m   build ecTyrosol.mat (RAVEN)
+│   └── ecTyrosol.mat                   enzyme-constrained tyrosol model
 ├── scripts/
-│   └── run_tyrosol_ecFactory.m    ecFactory strain-design pipeline (MATLAB)
-├── results/
-│   ├── candidates_L1.txt
-│   ├── candidates_L2.txt
-│   ├── candidates_L3.txt
-│   └── transporter_targets.txt
+│   └── run_tyrosol_ecFactory.m         ecFactory strain design
+├── results/                            target lists (L1, L2, L3, transporters)
 └── docs/
-    └── METHODS.md                 pathway assumptions and simulation settings
+    └── METHODS.md                      assumptions and parameters
+```
+
+## Reproducibility (RAVEN + GECKO)
+
+```matlab
+cd Tyrosol_ecYeast/model
+build_ecTyrosol_model_raven          % ecTyrosol.mat from ecYeastGEM_batch.mat
+
+addpath(fullfile(pwd, '..', 'scripts'))
+run_tyrosol_ecFactory                % results/*.txt
 ```
 
 ## Workflow
 
-1. **Model construction** — Extend `ecYeastGEM_batch.mat` with the Ehrlich
-   tyrosol pathway (ARO10, ADH7) and product export reactions. Modeling
-   assumptions are listed in `build_ecTyrosol_model.py` and `docs/METHODS.md`.
+1. **Model** — `build_ecTyrosol_model_raven.m` extends `ecYeastGEM_batch.mat`
+   with the Ehrlich pathway (ARO10, ADH7), export reactions, and product
+   objective using RAVEN `addMets` / `addRxns` / `setParam`.
 
-2. **Strain design** — Run ecFactory on minimal glucose medium to obtain
-   ranked gene targets (OE / KD / KO) and transporter candidates.
+2. **Strain design** — `run_tyrosol_ecFactory.m` runs ecFactory on minimal
+   glucose medium and writes ranked targets to `results/`.
 
-## Model assumptions (summary)
+## Model assumptions
 
-- Tyrosol via native Ehrlich pathway: 4-HPP → 4-HPAA (ARO10) → tyrosol (ADH7).
-- Enzyme-constrained arms on the new steps with kcat = 1000 s⁻¹.
-- Wild-type yeast background; minimal medium for the simulation.
+- Native Ehrlich route: 4-HPP → 4-HPAA (ARO10) → tyrosol (ADH7).
+- Enzyme-constrained new steps: kcat = 1000 s⁻¹ (GECKO protein coefficients).
+- Wild-type background; minimal medium in simulation.
 
 ## ecFactory settings
 
@@ -51,36 +54,14 @@ Tyrosol_ecYeast/
 
 ## Requirements
 
-- Python 3 + `scipy` (model build)
-- MATLAB + RAVEN + Gurobi + GECKO 2.0.3 (`~/Documents/ecFactory/code/GECKO`)
+- MATLAB
+- [RAVEN Toolbox](https://github.com/SysBioChalmers/RAVEN)
+- [GECKO 2.0.3](https://github.com/SysBioChalmers/GECKO) and [ecFactory](https://github.com/SysBioChalmers/ecFactory)
+- Gurobi
+- `ecYeastGEM_batch.mat` from [CellFactory-ecYeastGEM](https://github.com/SysBioChalmers/CellFactory-ecYeastGEM)
 
-## Quick start
-
-```bash
-git clone <repository-url>
-cd Tyrosol_ecYeast
-
-# 1) Build the ecModel (requires ecYeastGEM_batch.mat from CellFactory-ecYeastGEM)
-pip install -r requirements.txt
-python model/build_ecTyrosol_model.py
-
-# 2) Run ecFactory in MATLAB (GECKO 2.0.3 + RAVEN + Gurobi on your path)
-matlab -nodisplay -batch "addpath('scripts'); run_tyrosol_ecFactory"
-```
-
-Outputs are written to `results/`. See `docs/METHODS.md` for assumptions and
-parameters.
-
-## External dependencies (not included in this repo)
-
-| Component | Location / note |
-|---|---|
-| Base ecModel | `CellFactory-ecYeastGEM/ModelFiles/ecYeastGEM_batch.mat` |
-| ecFactory + GECKO 2.0.3 | `~/Documents/ecFactory/code` with `GECKO` → GECKO 2.0.3 |
-| RAVEN Toolbox | User MATLAB installation |
-| Gurobi | LP solver for RAVEN |
+See `docs/METHODS.md` for full assumptions (A1–A6) and paths.
 
 ## Citation
 
-If you use this workflow, cite ecFactory, GECKO, and ecYeastGEM as appropriate
-for your manuscript (add your publication reference here).
+Cite ecFactory, GECKO, ecYeastGEM, and this work as appropriate for your manuscript.

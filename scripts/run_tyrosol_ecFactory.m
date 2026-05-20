@@ -2,13 +2,13 @@ function run_tyrosol_ecFactory()
 %RUN_TYROSOL_ECFACTORY Genome-scale strain design for tyrosol production.
 %
 %   Pipeline:
-%     1. Load ecTyrosol.mat (built by ../model/build_ecTyrosol_model.py).
+%     1. Load ecTyrosol.mat (built by ../model/build_ecTyrosol_model_raven.m).
 %     2. Apply minimal medium with D-glucose as carbon source.
 %     3. Run ecFactory (GECKO 2.x + RAVEN) to predict gene targets at three
 %        filtering levels (L1, L2, L3) plus transporter reactions.
 %
-%   Model assumptions are documented in build_ecTyrosol_model.py and
-%   docs/METHODS.md. This script does not modify any toolbox code.
+%   Model assumptions: docs/METHODS.md and model/build_ecTyrosol_model_raven.m.
+%   This script does not modify any toolbox code.
 %
 %   Required on the MATLAB path:
 %     - ~/Documents/ecFactory/code  (GECKO 2.0.3 via code/GECKO symlink)
@@ -36,7 +36,7 @@ fprintf('Model: %s\n', MODEL_FILE);
 fprintf('Results: %s\n', RESULTS_FOLDER);
 
 assert(exist(MODEL_FILE, 'file') == 2, ...
-    'Missing %s. Run build_ecTyrosol_model.py first.', MODEL_FILE);
+    'Missing %s. Run build_ecTyrosol_model_raven.m first.', MODEL_FILE);
 assert(isfolder(fullfile(ECFACTORY_CODE, 'GECKO')), ...
     'GECKO 2.0.3 required at %s/GECKO', ECFACTORY_CODE);
 

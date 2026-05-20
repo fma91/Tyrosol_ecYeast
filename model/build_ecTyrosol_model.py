@@ -30,6 +30,10 @@ Modeling assumptions (documented in code and in docs/METHODS.md):
 
 Output: ecTyrosol.mat in this directory. The base ecYeastGEM_batch.mat file is
 never modified.
+
+For reproduction in Methods, use model/build_ecTyrosol_model_raven.m (RAVEN)
+and scripts/run_tyrosol_ecFactory.m (GECKO/ecFactory). This Python script is
+not required for the published workflow.
 """
 import os
 import numpy as np
