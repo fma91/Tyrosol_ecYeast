@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.Python
+.venv/
+venv/
+
+# MATLAB
+*.asv
+*.m~
+
+# Logs (regenerated on each run)
+*.log
+run_tyrosol_ecFactory.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Optional local paths (do not commit machine-specific config)
+.env

@@ -1,0 +1,4 @@
+rxn_IDs	rxnNames	K_score	grRules	rxn_formula
+r_1194	L-glutamate transport	4.20146431376069	YPR021C	L-glutamate[c] => L-glutamate[m]
+r_1112_REV	AKG transporter, mitochonrial (reversible)	2.79460864657087	YMR241W	2-oxoglutarate[m] + citrate[c] => 2-oxoglutarate[c] + citrate[m]
+r_3545	L-serine transport, cytoplasm-ER membrane	0.293375897984187	YKR039W	L-serine[c] => L-serine[erm]
