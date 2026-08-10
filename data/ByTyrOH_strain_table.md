@@ -1,9 +1,12 @@
 # ByTyrOH cumulative strain table (in silico mapping)
 
-Experimental strains built cumulatively from Iván ecFactory predictions.
-In silico envelopes use **`model/ecTyrosol.mat`** (native Ehrlich pathway,
-ARO10/ADH7 kcat = 1000) — the model that reproduces Iván’s L3 target list, not
-`ecTyrosol_fma` (heterologous bypass + YEP).
+Laboratory strains built as a **cumulative** engineering series. Each row
+adds one or more edits on top of all previous rows. The in silico mapping is
+implemented in `scripts/defineByTyrOHStrainTable.m` and used by
+`tyrosol_envelopes.m` and `tyrosol_dfba.m`.
+
+Envelopes and dFBA load **`model/ecTyrosol.mat`** (native Ehrlich pathway,
+ARO10/ADH7 at kcat = 1000 s⁻¹ on minimal medium).
 
 | Strain | ARO2 OE | ARO7 G141S OE | ARO4 K229L OE | ARO10 OE | LPP1 KD | ALD5 KO | MAE1 KO | ZWF1 KD | ARO1 OE | PHA2 KD | ADH6–ADH7 OE | PDH1 OE |
 |--------|---------|---------------|---------------|----------|---------|---------|---------|---------|---------|---------|---------------|---------|
@@ -21,6 +24,9 @@ ARO10/ADH7 kcat = 1000) — the model that reproduces Iván’s L3 target list, 
 | ByTyrOH 12 | + | + | + | + | + | + | + | + | + | + | − | + |
 | ByTyrOH def | + | + | + | + | + | + | + | + | + | + | + | + |
 
+Lab flask names use **ByTOH1–ByTOH11** (no ByTOH4); cumulative in silico names
+skip **ByTyrOH 4** accordingly (sequence 1, 2, 3, 5, …, 11, 12, def).
+
 ## Gene IDs (S. cerevisiae)
 
 | Label | Gene ID | Action in model |
@@ -33,7 +39,7 @@ ARO10/ADH7 kcat = 1000) — the model that reproduces Iván’s L3 target list, 
 | ALD5 | YER073W | KO |
 | MAE1 | YKL029C | KO |
 | ZWF1 | YNL241C | KD (×0.21) |
-| ARO1 | YDR127W | OE (×1000) |
+| ARO1 | YDR127W | OE (×13.93) |
 | PHA2 | YNL316C | KD (×0.21) |
 | ADH6 | YMR318C | OE (×1000) |
 | ADH7 | YCR105W | OE (×1000) |

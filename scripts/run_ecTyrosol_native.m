@@ -1,55 +1,61 @@
-function run_tyrosol_ecFactory()
-%RUN_TYROSOL_ECFACTORY Genome-scale strain design for tyrosol production.
+function run_ecTyrosol_native()
+%RUN_ECTYROSOL_NATIVE Run ecFactory on the Ehrlich-style ecTyrosol_native model.
 %
-%   Pipeline:
-%     1. Load ecTyrosol.mat (built by ../model/build_ecTyrosol_model_raven.m).
-%     2. Apply minimal medium with D-glucose as carbon source.
-%     3. Run ecFactory (GECKO 2.x + RAVEN) to predict gene targets at three
-%        filtering levels (L1, L2, L3) plus transporter reactions.
+%   Model: ecTyrosol_native.mat (built by ../model/build_ecTyrosol_model_raven.m).
+%     ecYeastGEM_batch.mat + native Ehrlich tyrosol branch:
+%       4-HPP --ARO10(kcat=1000/s)--> 4-HPAA --ADH7(kcat=1000/s)--> tyrosol
+%     No heterologous AAS/AdhE bypass, no chassis deletions.
 %
-%   Model assumptions: docs/METHODS.md and model/build_ecTyrosol_model_raven.m.
-%   This script does not modify any toolbox code.
+%   Medium: minimal D-glucose ('Min').
 %
-%   Required on the MATLAB path:
-%     - ~/Documents/ecFactory/code  (GECKO 2.0.3 via code/GECKO symlink)
-%     - RAVEN Toolbox, Gurobi
+%   Before ecFactory, model.c is switched to the biomass pseudoreaction (same
+%   convention as CellFactory run_predictions.m) so ecFSEOF scans growth flux.
+%
+%   expYield = 0.49 * WT_yield, WT_yield = 0.48 g/g glucose.
 %
 %   Outputs (written to ../results/):
 %     candidates_L1.txt, candidates_L2.txt, candidates_L3.txt,
 %     transporter_targets.txt
+%
+%   Toolboxes (not modified):
+%     ~/Documents/ecFactory/code  (run_ecFactory + GECKO 2.0.3)
+%     RAVEN Toolbox + Gurobi on the MATLAB path.
 
 HERE = fileparts(mfilename('fullpath'));
 PKG_ROOT = fileparts(HERE);
 HOME_DIR = char(java.lang.System.getProperty('user.home'));
 ECFACTORY_CODE = fullfile(HOME_DIR, 'Documents', 'ecFactory', 'code');
-MODEL_FILE = fullfile(PKG_ROOT, 'model', 'ecTyrosol.mat');
+MODEL_FILE = fullfile(PKG_ROOT, 'model', 'ecTyrosol_native.mat');
 RESULTS_FOLDER = fullfile(PKG_ROOT, 'results');
-DIARY_FILE = fullfile(PKG_ROOT, 'run_tyrosol_ecFactory.log');
+DIARY_FILE = fullfile(PKG_ROOT, 'run_ecTyrosol_native.log');
 
 if exist(DIARY_FILE, 'file'); delete(DIARY_FILE); end
 diary(DIARY_FILE); diary on;
 diaryCleanup = onCleanup(@() diary('off'));
 
-fprintf('=== Tyrosol strain design (ecFactory) ===\n');
+fprintf('=== ecTyrosol_native ecFactory run ===\n');
 fprintf('Date: %s\n', datestr(now, 'yyyy-mm-dd HH:MM:SS'));
-fprintf('Model: %s\n', MODEL_FILE);
+fprintf('Model file: %s\n', MODEL_FILE);
 fprintf('Results: %s\n', RESULTS_FOLDER);
 
 assert(exist(MODEL_FILE, 'file') == 2, ...
-    'Missing %s. Run build_ecTyrosol_model_raven.m first.', MODEL_FILE);
-assert(isfolder(fullfile(ECFACTORY_CODE, 'GECKO')), ...
-    'GECKO 2.0.3 required at %s/GECKO', ECFACTORY_CODE);
+    'Missing model: %s. Run build_ecTyrosol_model_raven.m first.', MODEL_FILE);
+
+geckoLink = fullfile(ECFACTORY_CODE, 'GECKO');
+assert(isfolder(geckoLink), ...
+    'Missing GECKO at %s. Symlink GECKO 2.0.3 there.', geckoLink);
 
 addpath(genpath(ECFACTORY_CODE));
+
 required = {'solveLP', 'setParam', 'haveFlux'};
 missing = required(cellfun(@(f) isempty(which(f)), required));
 if ~isempty(missing)
-    error('Missing on path: %s', strjoin(missing, ', '));
+    error('Missing on the MATLAB path: %s.', strjoin(missing, ', '));
 end
+
 if ~exist(RESULTS_FOLDER, 'dir'); mkdir(RESULTS_FOLDER); end
 
-% ecFactory yield scan parameters (CellFactory-ecYeastGEM convention)
-WT_YIELD = 0.48;          % g biomass / g glucose on minimal medium
+WT_YIELD = 0.48;
 EXP_YIELD = 0.49 * WT_YIELD;
 
 original_pwd = pwd;
@@ -57,17 +63,15 @@ pwdCleanup = onCleanup(@() cd(original_pwd));
 
 raw = load(MODEL_FILE);
 fn = fieldnames(raw);
-assert(numel(fn) == 1, 'Expected one struct in %s', MODEL_FILE);
+assert(numel(fn) == 1, 'Expected single struct in %s', MODEL_FILE);
 ecModel = normalize_model_fields(raw.(fn{1}));
 
-fprintf('  Model size: %d reactions, %d metabolites, %d genes\n', ...
+fprintf('  Loaded model: n_rxns=%d, n_mets=%d, n_genes=%d\n', ...
     numel(ecModel.rxns), numel(ecModel.mets), numel(ecModel.genes));
 
-% Medium: minimal glucose (assumption — de novo aromatic biosynthesis active)
 CSname = 'D-glucose exchange (reversible)';
 ecModel = changeMedia_batch(ecModel, CSname, 'Min');
 
-% Relax optional minimum-growth constraint on r_2111 if present
 if any(strcmpi(ecModel.rxns, 'r_2111'))
     ecModel = setParam(ecModel, 'lb', 'r_2111', 0);
     ecModel = setParam(ecModel, 'ub', 'r_2111', 1000);
@@ -75,17 +79,20 @@ end
 
 modelParam = struct();
 targetIndex = find(ecModel.c);
-assert(numel(targetIndex) == 1, 'Product objective must be unique in model.c');
+assert(numel(targetIndex) == 1, 'Expected exactly one nonzero c entry');
 modelParam.rxnTarget = ecModel.rxns{targetIndex};
 modelParam.CS_MW = 0.18015;
-modelParam.CSrxn = ecModel.rxns{strcmpi(ecModel.rxnNames, CSname)};
-modelParam.growthRxn = ecModel.rxns{strcmpi(ecModel.rxnNames, 'biomass pseudoreaction')};
+csIdx = find(strcmpi(ecModel.rxnNames, CSname));
+assert(~isempty(csIdx), 'Could not find carbon source rxn "%s"', CSname);
+modelParam.CSrxn = ecModel.rxns{csIdx};
+grIdx = find(strcmpi(ecModel.rxnNames, 'biomass pseudoreaction'));
+assert(~isempty(grIdx), 'Could not find biomass pseudoreaction.');
+modelParam.growthRxn = ecModel.rxns{grIdx};
 
-fprintf('  Product reaction : %s (%s)\n', modelParam.rxnTarget, ecModel.rxnNames{targetIndex});
-fprintf('  Carbon source    : %s\n', modelParam.CSrxn);
-fprintf('  Growth reaction  : %s\n', modelParam.growthRxn);
+fprintf('  modelParam.rxnTarget = %s (%s)\n', modelParam.rxnTarget, ecModel.rxnNames{targetIndex});
+fprintf('  modelParam.CSrxn     = %s\n', modelParam.CSrxn);
+fprintf('  modelParam.growthRxn = %s\n', modelParam.growthRxn);
 
-% ecFSEOF requires biomass as the active objective during the scan
 ecModel = setParam(ecModel, 'obj', modelParam.growthRxn, 1);
 ecModel = setParam(ecModel, 'lb', modelParam.growthRxn, 0);
 ecModel = setParam(ecModel, 'ub', modelParam.growthRxn, 1000);
@@ -93,14 +100,17 @@ ecModel = setParam(ecModel, 'ub', modelParam.growthRxn, 1000);
 provModel = setParam(ecModel, 'ub', modelParam.CSrxn, 1);
 sol = solveLP(provModel, 1);
 if isempty(sol) || ~isfield(sol, 'x') || isempty(sol.x)
-    fprintf('  Warning: LP check returned empty solution on minimal medium.\n');
+    wtBio = NaN;
 else
     wtBio = sol.x(find(provModel.c));
-    flux = haveFlux(provModel, 1e-12, modelParam.rxnTarget);
-    fprintf('  LP check: max biomass = %g, product flux feasible = %d\n', wtBio, flux);
+end
+flux = haveFlux(provModel, 1e-12, modelParam.rxnTarget);
+fprintf('  Min sanity: biomass=%g  haveFlux(target)=%d\n', wtBio, flux);
+if isnan(wtBio) || wtBio <= 1e-4
+    warning('Min medium is infeasible for ecTyrosol_native; ecFactory may fail.');
 end
 
-fprintf('  expYield = %.4f (0.49 x WT_yield %.2f)\n', EXP_YIELD, WT_YIELD);
+fprintf('  WT_yield=%g, expYield=%g\n', WT_YIELD, EXP_YIELD);
 
 ecfseof_results_dir = fullfile(ECFACTORY_CODE, 'GECKO', 'geckomat', 'utilities', 'ecFSEOF', 'results');
 if exist(ecfseof_results_dir, 'dir')
@@ -121,7 +131,7 @@ end
 
 
 function model = normalize_model_fields(model)
-%NORMALIZE_MODEL_FIELDS Convert Python-exported .mat fields for RAVEN/Gurobi.
+%NORMALIZE_MODEL_FIELDS Patch shape/dtype mismatches from scipy.io.savemat.
 matrixFields = {'S', 'rxnGeneMat'};
 fn = fieldnames(model);
 for k = 1:numel(fn)
@@ -139,7 +149,8 @@ for k = 1:numel(fn)
         model.(f) = cellstr(v);
     end
 end
-numericFields = {'lb', 'ub', 'c', 'b', 'rev', 'metCharges', 'metComps', 'rxnConfidenceScores', 'MWs'};
+numericFields = {'lb', 'ub', 'c', 'b', 'rev', 'metCharges', 'metComps', ...
+    'rxnConfidenceScores', 'MWs'};
 for i = 1:numel(numericFields)
     f = numericFields{i};
     if isfield(model, f)

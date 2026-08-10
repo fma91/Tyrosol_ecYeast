@@ -1,227 +1,100 @@
-function strains = defineByTyrOHStrainTable(mode, yieldsFile)
-%DEFINEBYTYROHSTRAINTABLE Genotypes for ByTyrOH / ByTOH envelope simulations.
-%
-%   strains = defineByTyrOHStrainTable('cumulative')
-%       Full cumulative ByTyrOH series (By4743 wt through ByTyrOH def).
-%
-%   strains = defineByTyrOHStrainTable('measured')
-%       Strains listed in the yields workbook only, each with the full
-%       cumulative genotype from ByTyrOH_strain_table.md (not single edits).
+function strains = defineByTyrOHStrainTable(mode, xls)
+% Cumulative genotypes for ByTyrOH / ByTOH strains.
+% mode = 'cumulative' | 'measured'
 
-if nargin < 1 || isempty(mode)
-    mode = 'cumulative';
-end
+if nargin < 1 || isempty(mode); mode = 'cumulative'; end
 
 switch lower(mode)
     case 'cumulative'
-        strains = defineCumulativeByTyrOH();
+        strains = byTyrOH();
     case 'measured'
-        if nargin < 2 || isempty(yieldsFile)
-            yieldsFile = defaultYieldsFile();
-        end
-        strains = measuredStrainsFromYields(yieldsFile);
+        if nargin < 2 || isempty(xls); xls = findYieldsFile(); end
+        strains = fromYields(xls);
     otherwise
-        error('Unknown mode: %s (use ''cumulative'' or ''measured'')', mode);
+        error('mode must be cumulative or measured');
 end
 end
 
-% -------------------------------------------------------------------------
-function strains = defineCumulativeByTyrOH()
-k = ecFactoryFactors();
+function s = byTyrOH()
+% step 4 skipped (lab numbering)
+k = factors();
 
-strains(1).name = 'By4743 wt';
-strains(1).mods = cell(0, 3);
-
-strains(2).name = 'ByTyrOH 1';
-strains(2).mods = geneRow('YGL148W', 'OE', k.ARO2);
-
-strains(3).name = 'ByTyrOH 2';
-strains(3).mods = [strains(2).mods; geneRow('YPR060C', 'OE', k.ARO7)];
-
-strains(4).name = 'ByTyrOH 3';
-strains(4).mods = [strains(3).mods; ...
-    geneRow('YBR249C', 'OE', k.ARO4); ...
-    geneRow('YDR380W', 'OE', k.ARO10)];
-
-strains(5).name = 'ByTyrOH 5';
-strains(5).mods = [strains(4).mods; geneRow('YDR503C', 'KD', k.LPP1)];
-
-strains(6).name = 'ByTyrOH 6';
-strains(6).mods = [strains(5).mods; geneRow('YER073W', 'KO', 0)];
-
-strains(7).name = 'ByTyrOH 7';
-strains(7).mods = [strains(6).mods; geneRow('YKL029C', 'KO', 0)];
-
-strains(8).name = 'ByTyrOH 8';
-strains(8).mods = [strains(7).mods; geneRow('YNL241C', 'KD', k.ZWF1)];
-
-strains(9).name = 'ByTyrOH 9';
-strains(9).mods = [strains(8).mods; geneRow('YDR127W', 'OE', k.ARO1oe)];
-
-strains(10).name = 'ByTyrOH 10';
-strains(10).mods = [strains(9).mods; geneRow('YNL316C', 'KD', k.PHA2)];
-
-strains(11).name = 'ByTyrOH 11';
-strains(11).mods = [strains(10).mods; ...
-    geneRow('YMR318C', 'OE', k.ADH6); ...
-    geneRow('YCR105W', 'OE', k.ADH7)];
-
-strains(12).name = 'ByTyrOH 12';
-strains(12).mods = [strains(10).mods; geneRow('YER178W', 'OE', k.PDH1)];
-
-strains(13).name = 'ByTyrOH def';
-strains(13).mods = [strains(11).mods; geneRow('YER178W', 'OE', k.PDH1)];
+s(1).name = 'By4743 wt';  s(1).mods = cell(0,3);
+s(2).name = 'ByTyrOH 1';  s(2).mods = row('YGL148W','OE',k.ARO2);
+s(3).name = 'ByTyrOH 2';  s(3).mods = [s(2).mods; row('YPR060C','OE',k.ARO7)];
+s(4).name = 'ByTyrOH 3';  s(4).mods = [s(3).mods; row('YBR249C','OE',k.ARO4); row('YDR380W','OE',k.ARO10)];
+s(5).name = 'ByTyrOH 5';  s(5).mods = [s(4).mods; row('YDR503C','KD',k.LPP1)];
+s(6).name = 'ByTyrOH 6';  s(6).mods = [s(5).mods; row('YER073W','KO',0)];
+s(7).name = 'ByTyrOH 7';  s(7).mods = [s(6).mods; row('YKL029C','KO',0)];
+s(8).name = 'ByTyrOH 8';  s(8).mods = [s(7).mods; row('YNL241C','KD',k.ZWF1)];
+s(9).name = 'ByTyrOH 9';  s(9).mods = [s(8).mods; row('YDR127W','OE',k.ARO1)];
+s(10).name = 'ByTyrOH 10'; s(10).mods = [s(9).mods; row('YNL316C','KD',k.PHA2)];
+s(11).name = 'ByTyrOH 11'; s(11).mods = [s(10).mods; row('YMR318C','OE',k.ADH6); row('YCR105W','OE',k.ADH7)];
+s(12).name = 'ByTyrOH 12'; s(12).mods = [s(10).mods; row('YER178W','OE',k.PDH1)];
+s(13).name = 'ByTyrOH def'; s(13).mods = [s(11).mods; row('YER178W','OE',k.PDH1)];
 end
 
-% -------------------------------------------------------------------------
-function strains = measuredStrainsFromYields(yieldsFile)
-assert(exist(yieldsFile, 'file') == 2, 'Yields file not found: %s', yieldsFile);
-opts = detectImportOptions(yieldsFile, 'VariableNamingRule', 'preserve');
-T = readtable(yieldsFile, opts);
-strainCol = pickColumn(T, {'STRAIN', 'Strain', 'strain'});
+function s = fromYields(xls)
+assert(exist(xls,'file')==2, 'File not found: %s', xls);
+opts = detectImportOptions(xls,'VariableNamingRule','preserve');
+T = readtable(xls, opts);
+col = findCol(T, {'STRAIN','Strain','strain'});
 
-cumulative = defineCumulativeByTyrOH();
-cumByName = containers.Map('KeyType', 'char', 'ValueType', 'any');
-for i = 1:numel(cumulative)
-    cumByName(cumulative(i).name) = cumulative(i);
-end
+all = byTyrOH();
+map = containers.Map('KeyType','char','ValueType','any');
+for i = 1:numel(all); map(all(i).name) = all(i); end
 
-strains = repmat(struct('name', '', 'mods', {{}}), height(T), 1);
-fprintf('Measured strains — full cumulative phenotype (%d):\n', height(T));
+s = repmat(struct('name','','mods',{{}}), height(T), 1);
+fprintf('Measured strains (%d):\n', height(T));
 for i = 1:height(T)
-    yieldName = strtrim(char(string(T.(strainCol)(i))));
-    cumKey = cumulativeKeyForYieldName(yieldName);
-    if ~isKey(cumByName, cumKey)
-        error('No cumulative genotype for %s (key %s)', yieldName, cumKey);
-    end
-    entry = cumByName(cumKey);
-    strains(i).name = yieldName;
-    strains(i).mods = entry.mods;
-    fprintf('  %-12s  <- %-12s  (%d edit(s))\n', yieldName, cumKey, size(entry.mods, 1));
+    name = strtrim(char(string(T.(col)(i))));
+    key  = mapName(name);
+    if ~isKey(map,key); error('No genotype for %s', name); end
+    s(i).name = name;
+    s(i).mods = map(key).mods;
+    fprintf('  %-12s <- %s (%d)\n', name, key, size(s(i).mods,1));
 end
 end
 
-function key = cumulativeKeyForYieldName(yieldName)
-% Map flask labels (ByTOH1…) to cumulative table (ByTyrOH 1…; step 4 omitted).
-n = lower(strtrim(char(yieldName)));
-if strcmp(n, 'by4743 wt')
-    key = 'By4743 wt';
-    return;
-end
-if strcmp(n, 'bytohdef')
-    key = 'ByTyrOH def';
-    return;
-end
-tok = regexp(n, '^bytoh(\d+)$', 'tokens', 'once');
-if isempty(tok)
-    error('Unknown strain name in yields file: %s', yieldName);
-end
+function key = mapName(name)
+% ByTOH1..11 -> ByTyrOH 1,2,3,5..11
+n = lower(strtrim(char(name)));
+if strcmp(n,'by4743 wt'); key = 'By4743 wt'; return; end
+if strcmp(n,'bytohdef');  key = 'ByTyrOH def'; return; end
+tok = regexp(n,'^bytoh(\d+)$','tokens','once');
+if isempty(tok); error('Unknown strain: %s', name); end
 idx = str2double(tok{1});
-cumStep = [1 2 3 5 6 7 8 9 10 11];
-if idx < 1 || idx > numel(cumStep)
-    error('ByTOH index out of range: %s', yieldName);
-end
-key = sprintf('ByTyrOH %d', cumStep(idx));
+steps = [1 2 3 5 6 7 8 9 10 11];
+if idx < 1 || idx > numel(steps); error('Bad ByTOH index: %s', name); end
+key = sprintf('ByTyrOH %d', steps(idx));
 end
 
-% -------------------------------------------------------------------------
-function mods = modificationToMods(modStr, k)
-mods = cell(0, 3);
-mod = lower(strtrim(char(modStr)));
-if isempty(mod) || strcmp(mod, 'none') || strcmp(mod, 'nan')
-    return;
-end
-
-if contains(mod, 'aro2')
-    mods = [mods; geneRow('YGL148W', 'OE', k.ARO2)]; %#ok<AGROW>
-end
-if contains(mod, 'aro7')
-    mods = [mods; geneRow('YPR060C', 'OE', k.ARO7)]; %#ok<AGROW>
-end
-if contains(mod, 'aro4')
-    mods = [mods; geneRow('YBR249C', 'OE', k.ARO4)]; %#ok<AGROW>
-end
-if contains(mod, 'aro10')
-    mods = [mods; geneRow('YDR380W', 'OE', k.ARO10)]; %#ok<AGROW>
-end
-if contains(mod, 'lpp1')
-    mods = [mods; geneRow('YDR503C', 'KD', k.LPP1)]; %#ok<AGROW>
-end
-if contains(mod, 'ald5')
-    mods = [mods; geneRow('YER073W', 'KO', 0)]; %#ok<AGROW>
-end
-if contains(mod, 'mae1')
-    mods = [mods; geneRow('YKL029C', 'KO', 0)]; %#ok<AGROW>
-end
-if contains(mod, 'zwf1')
-    mods = [mods; geneRow('YNL241C', 'KD', k.ZWF1)]; %#ok<AGROW>
-end
-if contains(mod, 'pha2')
-    mods = [mods; geneRow('YNL316C', 'KD', k.PHA2)]; %#ok<AGROW>
-end
-if contains(mod, 'adh6')
-    mods = [mods; geneRow('YMR318C', 'OE', k.ADH6)]; %#ok<AGROW>
-end
-if contains(mod, 'adh7')
-    mods = [mods; geneRow('YCR105W', 'OE', k.ADH7)]; %#ok<AGROW>
-end
-if contains(mod, 'pdh1') || contains(mod, 'mtpdh')
-    mods = [mods; geneRow('YER178W', 'OE', k.PDH1)]; %#ok<AGROW>
-end
-if contains(mod, 'aro1')
-    if contains(mod, 'kd')
-        mods = [mods; geneRow('YDR127W', 'KD', k.ARO1kd)]; %#ok<AGROW>
-    else
-        mods = [mods; geneRow('YDR127W', 'OE', k.ARO1oe)]; %#ok<AGROW>
-    end
-end
-
-if isempty(mods)
-    error('Could not parse modification string: %s', modStr);
-end
-end
-
-% -------------------------------------------------------------------------
-function k = ecFactoryFactors()
+function k = factors()
 k = struct( ...
-    'ARO2', 13.9306, 'ARO7', 15.8562, 'ARO4', 13.9306, 'ARO10', 1000, ...
-    'ARO1oe', 13.9306, 'ADH6', 13.9306, 'ADH7', 1000, 'PDH1', 5.2514, ...
-    'LPP1', 0.2079, 'PHA2', 0.21, 'ZWF1', 0.21, 'ARO1kd', 0.21);
+    'ARO2',13.9306,'ARO7',15.8562,'ARO4',13.9306,'ARO10',1000, ...
+    'ARO1',13.9306,'ADH6',13.9306,'ADH7',1000,'PDH1',5.2514, ...
+    'LPP1',0.2079,'PHA2',0.21,'ZWF1',0.21);
 end
 
-% -------------------------------------------------------------------------
-function f = defaultYieldsFile()
-homeDir = char(java.lang.System.getProperty('user.home'));
-candidates = { ...
-    fullfile(homeDir, 'Library', 'CloudStorage', 'OneDrive-Chalmers', ...
-        'Documents', 'tyrosol_ecYeasy', '6. Cepas tirosol - rendimientos en matraz.xlsx'), ...
-    fullfile(homeDir, 'Documents', 'tyrosol_ecYeasy', ...
-        '6. Cepas tirosol - rendimientos en matraz.xlsx')};
-for i = 1:numel(candidates)
-    if exist(candidates{i}, 'file')
-        f = candidates{i};
-        return;
-    end
+function f = findYieldsFile()
+h = char(java.lang.System.getProperty('user.home'));
+c = {fullfile(h,'Library','CloudStorage','OneDrive-Chalmers','Documents','tyrosol_ecYeasy','6. Cepas tirosol - rendimientos en matraz.xlsx'), ...
+     fullfile(h,'Documents','tyrosol_ecYeasy','6. Cepas tirosol - rendimientos en matraz.xlsx')};
+for i = 1:2
+    if exist(c{i},'file'); f = c{i}; return; end
 end
-error('Yields workbook not found. Pass yieldsFile explicitly.');
+error('Yields Excel not found.');
 end
 
-function col = pickColumn(T, candidates)
-vars = T.Properties.VariableNames;
-for i = 1:numel(candidates)
-    hit = vars(strcmpi(vars, candidates{i}));
-    if ~isempty(hit)
-        col = hit{1};
-        return;
-    end
+function c = findCol(T, names)
+v = T.Properties.VariableNames;
+for i = 1:numel(names)
+    hit = v(strcmpi(v,names{i}));
+    if ~isempty(hit); c = hit{1}; return; end
 end
-error('Expected one of these columns: %s', strjoin(candidates, ', '));
+error('Missing column.');
 end
 
-function s = modStrForRow(v)
-if iscell(v); s = char(v{1}); else; s = char(string(v)); end
-end
-
-function row = geneRow(gene, action, factor)
-row = {gene, action, factor};
+function r = row(gene, act, fac)
+r = {gene, act, fac};
 end

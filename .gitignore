@@ -11,7 +11,7 @@ venv/
 
 # Logs (regenerated on each run)
 *.log
-run_tyrosol_ecFactory.log
+run_ecTyrosol_native.log
 
 # OS / editor
 .DS_Store
@@ -20,3 +20,6 @@ run_tyrosol_ecFactory.log
 
 # Optional local paths (do not commit machine-specific config)
 .env
+
+# Markdown notes / drafts — not part of the shared paper material
+*.md

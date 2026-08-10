@@ -1,0 +1,6 @@
+rxn_IDs	rxnNames	K_score	grRules	rxn_formula
+arm_r_1178	iron (II) transport (arm)	0.0404404030325181	YMR319C or YMR058W	iron(2+)[e] => pmet_r_1178[e]
+r_1178No1	iron (II) transport (No1)	0.0404404030325181	YMR319C	pmet_r_1178[e] + 2.3304e-08 prot_P40988[c] => iron(2+)[c]
+r_1244	phosphate transport	0.0402891136791288	YBR296C or YCR037C or YJL198W or YML123C or YNR013C	H+[e] + phosphate[e] => H+[c] + phosphate[c]
+r_1811	glycine transport	0.00229399165825626	YPR058W	L-glycine[c] => L-glycine[m]
+r_1179	iron (II) transport	0.0018769022658876	YJL133W or YKR052C	iron(2+)[c] => iron(2+)[m]

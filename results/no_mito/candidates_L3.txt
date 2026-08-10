@@ -1,0 +1,12 @@
+genes	enzymes	shortNames	MWs	pathways	actions	k_scores	unique	conectivity	groups	EV_type	EUV_comparison	priority
+YCR048W	P25628	ARE1	71.61215	sce00100  Steroid biosynthesis	KO	0.041500394545737	1	96	0	biomass_coupled	down_subset	2
+YDL052C	P33333	SLC1	33.88654	sce00561  Glycerolipid metabolism sce00564  Glycerophospholipid metabolism sce01110  Biosynthesis of secondary metabolites	KO	0.025813587085646	1	28	0	unnecessary_prod	down_subset	2
+YAL054C	Q01574	ACS1	79.13997	sce00010  Glycolysis / Gluconeogenesis sce00620  Pyruvate metabolism sce00630  Glyoxylate and dicarboxylate metabolism sce00640  Propanoate metabolism sce01110  Biosynthesis of secondary metabolites sce01130  Biosynthesis of antibiotics sce01200  Carbon metabolism	KO	0.0145286023289404	1	13	0	biomass_coupled	down_subset	2
+YER141W	P40086	COX15	54.65792	sce00190  Oxidative phosphorylation sce00860  Porphyrin and chlorophyll metabolism sce01110  Biosynthesis of secondary metabolites	KO	0.00938451132943803	1	7	0	biomass_opt	down_subset	2
+YBR006W	P38067	UGA2	54.18854	sce00250  Alanine, aspartate and glutamate metabolism sce00310  Lysine degradation sce00350  Tyrosine metabolism sce00650  Butanoate metabolism sce00760  Nicotinate and nicotinamide metabolism	KO	0.00312817044314601	1	6	0	unnecessary_prod	down_overlaped	2
+YBL015W	P32316	ACH1	58.71137	sce00620  Pyruvate metabolism	KO	0.00187690226588761	1	7	0	biomass_coupled	down_subset	2
+YJR051W	P21375	OSM1	55.06455	sce00NNN  None	KO	0.0018769022658876	1	5	0	unnecessary_prod	down_subset	2
+YER170W	P26364	ADK2	25.19373	sce00230  Purine metabolism sce00730  Thiamine metabolism sce01110  Biosynthesis of secondary metabolites sce01130  Biosynthesis of antibiotics	KO	0.000938451132943802	1	5	0	biomass_coupled	down_subset	2
+YBR117C	P33315	TKL2	75.02862	sce00030  Pentose phosphate pathway sce01110  Biosynthesis of secondary metabolites sce01130  Biosynthesis of antibiotics sce01200  Carbon metabolism sce01230  Biosynthesis of amino acids	KO	0	1	10	0	unnecessary_prod	down_subset	2
+YMR319C	P40988	FET4	62.7913	sce00NNN  None	KO	0.0404404030325181	0	3	1	unusable	Equal	3
+YMR058W	P38993	FET3	72.35915	sce00NNN  None	KO	0.0404404030325181	0	3	1	unusable	Equal	3
