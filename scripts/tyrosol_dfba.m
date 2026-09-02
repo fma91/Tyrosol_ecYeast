@@ -24,6 +24,15 @@ switch lower(experiment)
         error('Use ''G5'' or ''parental''.');
 end
 
+% Optional: extendTo continues the same calibrated trajectory past tStop
+% (e.g. tyrosol_dfba_full sets extendTo=167 → fit on 0–93 h, run to 167 h).
+tFit = tStop;
+tRun = tStop;
+if exist('extendTo', 'var') && ~isempty(extendTo)
+    tRun = extendTo;
+    tag  = [tag '_full'];
+end
+
 dt      = 0.25;             % h
 glcMW   = 0.180156;
 tyrMW   = 138.164/1000;
@@ -71,31 +80,36 @@ if ~isempty(sol) && isfield(sol,'x') && ~isempty(sol.x)
 end
 
 exp  = readBatch(fullfile(dataDir, expFile));
-tEnd = min([tStop max(exp.glc.t) max(exp.bio.t)]);
-t1   = (0:1:tEnd)';
+tFitEnd = min([tFit max(exp.glc.t) max(exp.bio.t)]);
+tRunEnd = min([tRun max(exp.glc.t) max(exp.bio.t)]);
+t1   = (0:1:tFitEnd)';
 Gi   = interp1(exp.glc.t, exp.glc.v, t1, 'pchip');
 Xi   = interp1(exp.bio.t, exp.bio.v, t1, 'pchip');
 
-if isnan(Xmax); Xmax = max(exp.bio.v(exp.bio.t <= tEnd)); end
+if isnan(Xmax); Xmax = max(exp.bio.v(exp.bio.t <= tFitEnd)); end
 
 G0   = interp1(exp.glc.t, exp.glc.v, 0, 'pchip');
 X0   = interp1(exp.bio.t, exp.bio.v, 0, 'pchip');
-Xend = interp1(exp.bio.t, exp.bio.v, tEnd, 'pchip');
+Xfit = interp1(exp.bio.t, exp.bio.v, tFitEnd, 'pchip');
+Xend = interp1(exp.bio.t, exp.bio.v, tRunEnd, 'pchip');
 eth0 = interp1(exp.eth.t, exp.eth.v, 0, 'pchip');
 tyr0 = interp1(exp.tyr.t, exp.tyr.v, 0, 'pchip');
-tF   = (0:dt:tEnd)';
+tF   = (0:dt:tRunEnd)';
 
-% lag = first time biomass rises above inoculum
-iLag = find(exp.bio.v > 1.5*X0 & exp.bio.t <= tEnd, 1);
+% lag = first time biomass rises above inoculum (fit window)
+iLag = find(exp.bio.v > 1.5*X0 & exp.bio.t <= tFitEnd, 1);
 tLag = 0; if ~isempty(iLag); tLag = exp.bio.t(iLag); end
 
 qBase = max(Gi(1)-Gi(end),1e-9)/glcMW / trapz(t1,Xi);   % mmol/gDCW/h
 
-%% 1) fit kdScale to post-lag growth
-muNeed = log(max(Xend,X0+1e-9)/X0) / max(tEnd-tLag,1);
+%% 1) fit kdScale to post-lag growth (fit horizon only)
+muNeed = log(max(Xfit,X0+1e-9)/X0) / max(tFitEnd-tLag,1);
 kdList = [1 2 3 4 5 6 7 8 10 12];
 muList = zeros(size(kdList));
 fprintf('\n=== dFBA %s (no-mito) ===\n', strain);
+if tRunEnd > tFitEnd
+    fprintf('  fit horizon: 0–%.0f h; integrate to %.0f h (same parameters)\n', tFitEnd, tRunEnd);
+end
 fprintf('  kdScale scan (target mu=%.4f)\n', muNeed);
 for j = 1:numel(kdList)
     m = applyTyrosolMods(base, strains(1).mods, umap, vRef, true, kdList(j));
@@ -109,11 +123,11 @@ kd = kdList(j);
 mut = applyTyrosolMods(base, strains(1).mods, umap, vRef, true, kd);
 fprintf('  -> kdScale=%g (mu=%.4f, need %.4f), lag=%.1f h\n', kd, muList(j), muNeed, tLag);
 
-%% 2) fit uptake boost to final glucose
-Gtarget = interp1(exp.glc.t, exp.glc.v, tEnd, 'pchip');
+%% 2) fit uptake boost to glucose at fit horizon (NOT tRunEnd)
+Gtarget = interp1(exp.glc.t, exp.glc.v, tFitEnd, 'pchip');
 boosts  = 1.0:0.1:2.0;
 bestErr = inf; bestB = boosts(1);
-fprintf('  boost scan (target G(end)=%.2f, qBase=%.2f)\n', Gtarget, qBase);
+fprintf('  boost scan (target G(%.0f h)=%.2f, qBase=%.2f)\n', tFitEnd, Gtarget, qBase);
 for b = boosts
     tr = runDFBA(mut, gi, glc, eth, tid, t1, G0, X0, glcMW, ethMW, tyrMW, ...
                  b*qBase, Km, muSlack, tLag, lagFrac, pushTyr, Xmax);
@@ -127,15 +141,18 @@ end
 qSmax = bestB * qBase;
 fprintf('  -> boost=%.2f  qSmax=%.2f\n', bestB, qSmax);
 
-%% final
+%% final (may extend past fit horizon with locked parameters)
 pred = runDFBA(mut, gi, glc, eth, tid, tF, G0, X0, glcMW, ethMW, tyrMW, ...
                qSmax, Km, muSlack, tLag, lagFrac, pushTyr, Xmax);
 pred.name = strain;
 pred.eth  = pred.eth + eth0;
 pred.tyr  = pred.tyr + tyr0;
 
+GexpEnd = interp1(exp.glc.t, exp.glc.v, tRunEnd, 'pchip');
+fprintf('  @fit %.0fh: G=%.2f (exp %.2f)\n', tFitEnd, ...
+    interp1(pred.t, pred.glc, tFitEnd, 'linear'), Gtarget);
 fprintf('  final @%gh: G=%.2f (exp %.2f) X=%.3f (exp %.3f) EtOH=%.2f Tyr=%.3f\n', ...
-    tEnd, pred.glc(end), Gtarget, pred.bio(end), Xend, pred.eth(end), pred.tyr(end));
+    tRunEnd, pred.glc(end), GexpEnd, pred.bio(end), Xend, pred.eth(end), pred.tyr(end));
 
 out = fullfile(figDir, sprintf('dfba_%s', tag));
 writeDFBA(pred, fullfile(dataDir, sprintf('dfba_%s.csv', tag)));
