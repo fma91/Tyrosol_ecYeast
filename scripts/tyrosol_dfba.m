@@ -43,13 +43,26 @@ lagFrac = 0.25;
 
 root = fileparts(fileparts(mfilename('fullpath')));
 addpath(root); addpath(fullfile(root,'scripts'));
+set(0,'DefaultFigureVisible','off');
+set(0,'DefaultFigureColor','w','DefaultAxesColor','w', ...
+    'DefaultAxesXColor','k','DefaultAxesYColor','k','DefaultTextColor','k');
+
+dataDir = fullfile(root,'results','data');
+figDir  = fullfile(root,'results','figures','dfba_no_mito');
+if ~exist(dataDir,'dir'); mkdir(dataDir); end
+if ~exist(figDir,'dir'); mkdir(figDir); end
+
+if exist('replotTag','var') && ~isempty(replotTag)
+    replotFromCsv(replotTag, dataDir, figDir);
+    return;
+end
+
 home = char(java.lang.System.getProperty('user.home'));
 addpath(genpath(fullfile(home,'Documents','CellFactory-ecYeastGEM','code')));
 addpath(genpath(fullfile(home,'Documents','ecFactory','code')));
 addpath(genpath(fullfile(home,'RAVEN')));
 try; setRavenSolver('gurobi'); clear global RAVENSOLVER;
 catch; warning('Gurobi not found, using default solver.'); end
-set(0,'DefaultFigureVisible','off');
 
 model = loadEcModel(fullfile(root,'model','ecTyrosol.mat'));
 model = knockOutMito(model);
@@ -58,11 +71,6 @@ gi  = find(strcmpi(model.rxnNames,'growth'),1);
 glc = find(strcmpi(model.rxnNames,'D-glucose exchange (reversible)'),1);
 eth = find(strcmpi(model.rxns,'r_1761'),1);
 umap = loadUsageMap(fullfile(root,'results','candidates_L2.txt'));
-
-dataDir = fullfile(root,'results','data');
-figDir  = fullfile(root,'results','figures','dfba_no_mito');
-if ~exist(dataDir,'dir'); mkdir(dataDir); end
-if ~exist(figDir,'dir'); mkdir(figDir); end
 
 base = setMinGlucose(model, medium);
 base = closeLeaks(base);
@@ -253,24 +261,63 @@ fig = figure('Color','w','Visible','off','Position',[100 100 480*n 480]);
 tMax = max(tr.t);
 for p = 1:n
     ax = subplot(1,n,p); hold(ax,'on');
-    set(ax,'LineWidth',1.4,'FontSize',12,'TickDir','out');
+    stylePlotAxes(ax);
     hM = plot(ax, tr.t, tr.(vars{p}), '-', 'LineWidth',2.8, 'Color',[0.12 0.20 0.65]);
     e = exps{p}; keep = e.t <= tMax;
     hE = errorbar(ax, e.t(keep), e.v(keep), e.sd(keep), 'o', 'MarkerSize',6, ...
         'MarkerFaceColor',[0.85 0.33 0.10], 'MarkerEdgeColor','k', ...
         'Color',[0.85 0.33 0.10], 'LineWidth',1.1, 'CapSize',4);
-    xlabel(ax,'Time [h]'); ylabel(ax,labs{p});
+    xl = xlabel(ax,'Time [h]'); xl.Color = 'k';
+    yl = ylabel(ax,labs{p}); yl.Color = 'k';
     xlim(ax,[0 tMax]); box(ax,'on'); hold(ax,'off');
     if p==1
-        legend(ax,[hM hE],{'Model','Experiment'},'Location','northeast','Box','off');
+        leg = legend(ax,[hM hE],{'Model','Experiment'},'Location','northeast','Box','off');
+        leg.Color = 'w'; leg.TextColor = 'k'; leg.EdgeColor = 'none';
     end
 end
-sgtitle(sprintf('%s — predictive dFBA (no-mito)', tr.name), 'FontSize',14, 'FontWeight','bold');
+ttl = sgtitle(sprintf('%s — predictive dFBA (no-mito)', tr.name), 'FontSize',14, 'FontWeight','bold');
+ttl.Color = 'k';
 savefig(fig,[out '.fig']);
 exportgraphics(fig,[out '.png'],'Resolution',600,'BackgroundColor','white');
 exportgraphics(fig,[out '.svg'],'ContentType','vector','BackgroundColor','white');
 close(fig);
 fprintf('  saved %s.{fig,png,svg}\n', out);
+end
+
+function stylePlotAxes(ax)
+set(ax, 'Color', 'w', 'XColor', 'k', 'YColor', 'k', ...
+    'LineWidth', 1.4, 'FontSize', 12, 'TickDir', 'out');
+end
+
+function replotFromCsv(tag, dataDir, figDir)
+switch tag
+    case 'G5'
+        expFile = 'experimental_G5_batch.csv';
+        strain  = 'ByTOHdef';
+    case 'G5_full'
+        expFile = 'experimental_G5_batch.csv';
+        strain  = 'ByTOHdef';
+    case 'parental'
+        expFile = 'experimental_parental_batch.csv';
+        strain  = 'By4743 wt';
+    otherwise
+        error('Unknown replotTag: %s', tag);
+end
+csvFile = fullfile(dataDir, sprintf('dfba_%s.csv', tag));
+if ~isfile(csvFile); error('Missing %s', csvFile); end
+T = readtable(csvFile);
+tr.name = strain;
+tr.t   = T.time_h;
+tr.glc = T.glucose_gL;
+tr.bio = T.biomass_gL;
+tr.eth = T.ethanol_gL;
+tr.tyr = T.tyrosol_gL;
+tr.mu  = T.mu_1h;
+tr.qS  = T.qS_mmol_gDCW_h;
+exp = readBatch(fullfile(dataDir, expFile));
+out = fullfile(figDir, sprintf('dfba_%s', tag));
+plotDFBA(tr, exp, out);
+fprintf('Replotted %s\n', out);
 end
 
 function exp = readBatch(f)
